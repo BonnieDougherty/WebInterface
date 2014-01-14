@@ -6,6 +6,10 @@ import serial
 import Queue
 from apscheduler.scheduler import Scheduler
 import os.path
+from Database import Database
+import logging
+
+logging.basicConfig()
 
 BROADCAST='\x00\x00\x00\x00\x00\x00\xFF\xFF'
 UNKNOWN = '\xFF\xFE'
@@ -17,6 +21,8 @@ XBeeReference = []
 XBeeFilenames = []
 XBeeStatus = []
 XBeeParameters = []
+current_data=''
+
 XBeeReference.append('\x00\x13\xA2\x00\x40\xAC\x17\x30')
 XBeeReference.append('\x00\x13\xA2\x00\x40\xA8\xBF\x3B')
 XBeeReference.append('\x00\x13\xA2\x00\x40\xA8\xC2\x37')
@@ -26,7 +32,7 @@ XBeeReference.append('\x00\x13\xA2\x00\x40\xAA\x19\x95')
 XBeeReference.append('\x00\x13\xA2\x00\x40\xA8\xC2\x0A')
 XBeeReference.append('\x00\x13\xA2\x00\x40\xAA\x19\x9D')
 XBeeReference.append('\x00\x13\xA2\x00\x40\xAA\x19\xDD')
-XBeeReference.append('\x00\x13\xA2\x00\x40\xAA\x1A\x7B')
+XBeeReference.append('\x00\x13\xA2\x00\x40\xAA\x1A\x7E')
 XBeeReference.append('\x00\x13\xA2\x00\x40\xAA\x19\x84')
 XBeeReference.append('\x00\x13\xA2\x00\x40\xAA\x1A\x59')
 XBeeReference.append('\x00\x13\xA2\x00\x40\xA8\xC1\x99')
@@ -44,13 +50,22 @@ xbee = ZigBee(ser,callback=message_received,escaped=True)
 
 # Function to handle packets
 def handlePacket(data):
+    global current_data
+    global platetimeHEX
+    # Response to at packet
     if data['id'] == 'at_response':
-        XBeeAddress.append(data['parameter']['source_addr_long'])
-        check = 0
-        while data['parameter']['source_addr_long'] != XBeeReference[check]:
-            check = check+1
-        XBeeID.append(check+1)
-        XBeeStatus.append(0)
+        # Packet transmission was successful
+        if data['status'] == '\x00':
+            # Check to see if the address is already recorded
+            for i in range(0,len(XBeeAddress)):
+                if XBeeAddress[i] == data['parameter']['source_addr_long']:
+                    return
+            XBeeAddress.append(data['parameter']['source_addr_long'])
+            check = 0
+            while data['parameter']['source_addr_long'] != XBeeReference[check]:
+                check = check+1
+            XBeeID.append(check+1)
+            XBeeStatus.append(0)
         
     if data['id'] == 'tx_status':
         # Look into re-sending packet
@@ -65,6 +80,10 @@ def handlePacket(data):
                 x=x+1
             XBeeStatus[x]= data['rf_data']
             pass
+        if len(data['rf_data']) == 4:
+            platetimeHEX = data['rf_data']
+            platetime = ord(data['rf_data'][0])*16777216 + ord(data['rf_data'][1])*65536 + ord(data['rf_data'][2])*256 + ord(data['rf_data'][3])
+            print platetime
         if len(data['rf_data']) == 8 :
             # Recieved parameters
             XBeeParameters.append(int(data['rf_data'][4:8],16))
@@ -72,101 +91,72 @@ def handlePacket(data):
             x=0
             while (data['source_addr_long'] != XBeeAddress[x]):
                 x=x+1
-            
-            
-            save_path = '/media/usbhdd/'
-            filename = os.path.join(save_path,XBeeFilenames[x])
-            current_file = open(filename,'a')
             if (XBeeStatus[x]+1)%3 == 0:
-                current_file.write(data['rf_data'][0:130])
-                current_file.write('\n')
+                current_data=current_data+data['rf_data'][0:130]
+                #current_file.write(data['rf_data'][0:130])
+                #current_file.write('\n')
             else:
-                current_file.write(data['rf_data'][0:132])
-            current_file.close()
+                current_data=current_data+data['rf_data'][0:132]
+                #current_file.write(data['rf_data'][0:132])
+            #current_file.close()
             XBeeStatus[x]=XBeeStatus[x]+1
+            print XBeeStatus
 
 def collect_data():
     global reads
-    current = []
-    XBeeStart = []
+    global current_data
+    starttime = time.clock()
     for x in range(0,numReaders):
         XBeeStatus[x]=0                                                                                                                                                                              
     for x in range(0,numReaders):
+        #xbee.send('tx',dest_addr_long=XBeeAddress[x],dest_addr=UNKNOWN,data=b't')
+        time.sleep(1)
+        current_data=''
         xbee.send('tx',dest_addr_long=XBeeAddress[x],dest_addr=UNKNOWN,data=b'D')
         start = time.clock()
         time.sleep(2)
         while XBeeStatus[x] != 12:
             if (time.clock()-start)>30:
-                xbee.send('tx',dest_addr_long=XBeeAddress[x],dest_addr=UNKNOWN,data=b'D')
-                start = time.clock()
-                print ("Re-sent DATA_SEND to {0}".format(x))
-                time.sleep(2)
+                #xbee.send('tx',dest_addr_long=XBeeAddress[x],dest_addr=UNKNOWN,data=b'D')
+                #XBeeStatus[x]=0
+                #current_data=''
+                #start = time.clock()
+                #print ("Re-sent DATA_SEND to {0}".format(x))
+                #time.sleep(2)
+                print "Did not recieve data"
+                XBeeStatus[x] = 12
+                #xbee.send('tx',dest_addr_long=XBeeAddress[x],dest_addr=UNKNOWN,data=b't')
+                current_data=1594*'0'
+            if (time.clock()-starttime)>115:
+                print ("Exceeded time limit")
+                return
             try:
                 if packets.qsize() > 0:
                     newPacket = packets.get_nowait()
                     handlePacket(newPacket)
-                    print XBeeStatus
             except KeyboardInterrupt:
-                    break
-    """
-    for x in range(0,3):
-        xbee.send('tx',dest_addr_long=XBeeAddress[x],dest_addr=UNKNOWN,data=b'D')
-        print("Sent DATA_SEND to {0}".format(x))
-        current.append(x)
-        XBeeStart.append(time.clock())
-    time.sleep(2)
-    print ("Current: {0}".format(current))
-    while sum(XBeeStatus) != (36*numReaders):
-        while x != numReaders-1:
-            while XBeeStatus[current[0]] != 36 and XBeeStatus[current[1]] != 36 and XBeeStatus[current[2]] != 36:
-	        try:
-                    while packets.qsize() > 0:
-                        newPacket = packets.get_nowait()
-                        handlePacket(newPacket)
-                        print XBeeStatus
-                except KeyboardInterrupt:
-                    break
-            print("Sent DATA_SEND to {0}".format(x))
-            if(XBeeStatus[current[0]] == 36) and x != numReaders-1:
-                x = x+1
-                xbee.send('tx',dest_addr_long=XBeeAddress[x],dest_addr=UNKNOWN,data=b'D')
-                XBeeStart[0] = time.clock()
-                time.sleep(1)
-                current[0] = x
-            if(XBeeStatus[current[1]] == 36) and x != numReaders-1:
-                x=x+1
-                xbee.send('tx',dest_addr_long=XBeeAddress[x],dest_addr=UNKNOWN,data=b'D')
-                XBeeStart[1] = time.clock()
-                time.sleep(1)
-                current[1] = x
-            if(XBeeStatus[current[2]] == 36) and x != numReaders-1:
-                x=x+1
-                xbee.send('tx',dest_addr_long=XBeeAddress[x],dest_addr=UNKNOWN,data=b'D')
-                XBeeStart[2] = time.clock()
-                time.sleep(1)
-                current[2] = x
-            print ("Current: {0}".format(current))
+                break      
+        # Save to database
+        db = Database()
+        for res in range(0,4):
+            data = current_data[res*394:res*394+394]
+            well_data = ''
+            for well in range(0,96):
+                well_data = well_data+','+str(int(data[12+well*4:14+well*4]+data[10+well*4:12+well*4],16))
+                current_time = int(data[6:8]+data[4:6]+data[2:4]+data[0:2],16)       
+            db.add_data(exp_id,XBeeID[x],current_time,data[8:10],well_data) 
+        db.close()
 
-        # Sent SEND_DATA signal to all plate_readers, waiting for data
-        time.sleep(5)
-        while packets.qsize() > 0:
-            newPacket = packets.get_nowait()
-            handlePacket(newPacket)
-            print XBeeStatus
-        
-        # Check to see if one wasn't fully recieved
-        for y in range(0,3): 
-            if XBeeStatus[current[y]] != 36 and (time.clock()-XBeeStart[y]) > 15:
-                print "Entered time check"
-                XBeeStatus[y] = 0
-                xbee.send('tx',dest_addr_long=XBeeAddress[y],dest_addr=UNKNOWN,data=b'D')
-                print ("Re-sent DATA_SEND to {0}".format(y))
-                XBeeStart[y]=time.clock()
-                time.sleep(5)
-    """
-        
+        # Save to text file
+        save_path = '/media/usbhdd'
+        filename = os.path.join(save_path,XBeeFilenames[x])  
+        current_file = open(filename,'a')
+        current_file.write(current_data)
+        current_file.write('\n')
+        current_file.close()
     reads = reads+1
     print ("Recieved data: {0}".format(reads))
+    return
 
 #-----Scheduler----------
 SchedDataCollect = Scheduler()
@@ -176,9 +166,16 @@ if __name__ == '__main__':
     # Code to be executed when the script is called directly
     while packets.qsize() > 0:
         newPacket = packets.get_nowait()
+    
+    # Connect to database
+    db = Database('PlateReader')
+    name = raw_input("Name of the experiment:")
+    experimenter = raw_input("Experimenter:")
+    exp_id = db.add_experiment(name=name,experimenter=experimenter)
+
+
     # Send ND command - responses will create a list of addresses
     xbee.at(command=b'ND')
-
     numReaders = int(raw_input("How many readers?"))
     while len(XBeeID) != numReaders:
         try:
@@ -188,22 +185,25 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             break
     
-    # Open the database file
-    db = Database()
-    
-    # Create new entry in the experiments table 
-    name = raw_input("Name of the experiment:")
-    experimenter = raw_input("Experimenter")
-    exp_id = db.add_experiment(name=name,experimenter=experimenter)
-    
-    # Create entries in the plate table for each plate in the experiment
+    # Ask for specific file names for each XBee ID:
     for x in range(0,len(XBeeID)):
         name = raw_input("Identifier {0} filename:".format(XBeeID[x]))
+        XBeeFilenames.append(name)
+        save_file = '/media/usbhdd/'
+        file_name = os.path.join(save_file,XBeeFilenames[x])
+        current_file = open(file_name,'w')
+        current_file.close()
+        # Add plate to database
         db.add_plate(exp_id,XBeeID[x],name)
-        
+
+    # Close the database
+    db.close()
+
     # Send WAITING signal to each device
     for x in range(0,numReaders):
         xbee.send('tx',dest_addr_long=XBeeAddress[x],dest_addr=UNKNOWN,data=b'W')
+        time.sleep(2)
+        xbee.send('tx',dest_addr_long=XBeeAddress[x],dest_addr=UNKNOWN,data=b't')
 
     while len(XBeeParameters) != int(numReaders):
         try:
