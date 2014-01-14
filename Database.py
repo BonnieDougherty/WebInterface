@@ -38,7 +38,8 @@ CREATE_PLATES_TABLE = """
 CREATE_DATA_TABLE = """
     CREATE TABLE {0}(
         plate TEXT,
-		time TEXT,
+	time TEXT,
+        resistance TEXT,
         data TEXT )
 """
 
@@ -139,7 +140,7 @@ class Database(object):
             return current.fetchall()
 
     # Retrieve plate information specified by plate and experiment
-    def get_plates(self,experiment,plate=None):
+    def get_plates(self,experiment,plate=None,resistance=None):
         # Plate table name based off experiment ID
         plate_table = plate_table_name(experiment)
         if plate:
