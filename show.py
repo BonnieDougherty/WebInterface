@@ -25,16 +25,14 @@ form = cgi.FieldStorage()
 db = Database(form.getvalue("db"))
 
 try:
-	data_from_db = db.get_data(experiment=form.getvalue("experiment"),plate=form.getvalue("plate") )  
-	#data_rows = data_from_db.fetchall()
+	data_from_db = db.get_data(experiment=form.getvalue("experiment"),plate=form.getvalue("plate")) 
 	
-	#plotStorageDir = ""
-	#temp_data_file = ""
+	plotStorageDir = ""
+	temp_data_file = ""
 
-        """
 	try:
 		# Create temp data file
-		temp_data_file = createTempCSV(data_rows,form.getvalue("db"),form.getvalue("experiment"),form.getvalue("plate"))
+		temp_data_file = createTempCSV(data_from_db,form.getvalue("db"),form.getvalue("experiment"),form.getvalue("plate"))
 
 		# Run R script to create graphs/plots if they don't already exist
 		#plotStorageDir = generatePlots(form.getvalue("db"),form.getvalue("experiment"),form.getvalue("plate"),temp_data_file)
@@ -43,7 +41,6 @@ try:
 		#os.remove(temp_data_file)
 	except:
 		print "<b>There was a problem with the data format</b></br>\n"
-        """	
      
 	print h2("Data Retrieval complete:")
 	print """
@@ -56,14 +53,14 @@ try:
 		form.getvalue("experiment"),
 			form.getvalue("plate") )
 
-	print "<center>"
-	plateImage = os.path.join(plotStorageDir,"plate.jpg")
-	if os.path.exists(plateImage):
-		print image(plateImage,600)
-		print tableFromImageDir(plotStorageDir)
-	else:
-		print "<b>Plots not available</b>"
-	print "</center>\n"
+	#print "<center>"
+	#plateImage = os.path.join(plotStorageDir,"plate.jpg")
+	#if os.path.exists(plateImage):
+	#	print image(plateImage,600)
+	#	print tableFromImageDir(plotStorageDir)
+	#else:
+	#	print "<b>Plots not available</b>"
+	#print "</center>\n"
 
 	#data_from_db = db.get_data(experiment=form.getvalue("experiment"),plate=form.getvalue("plate") )  
 	#headings = ("Plate","Time","Data")

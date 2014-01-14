@@ -4,7 +4,7 @@ import subprocess
 import stat
 import os
 
-BASEPATH = os.path.realpath("cgi-bin") 
+BASEPATH = os.path.realpath("/home/pi") 
 R_PATH = os.path.join(BASEPATH,"Rscripts")
 GRAPHS_PATH = os.path.join(R_PATH,"graphs")
 
@@ -18,17 +18,17 @@ GRAPHS_PATH = os.path.join(R_PATH,"graphs")
 def createTempCSV(data,database_name,experiment,plate):
 	# Create new file
 	file_name = 'd' + database_name + 'e' + experiment + 'p' + plate + '.csv'
-	file_path_name = os.path.join(R_PATH,"tempData",file_name)	
-	temp_file = open(file_path_name,'w+')
+	file_path_name = os.path.join(R_PATH,"tempData",file_name)
+        temp_file = open(file_path_name,'w+')
 	
 	# Read from database and format for file
 	for row in data:
-		splitData = string.split(row[2],',D,')
-		null_data = string.lstrip(splitData[0],'N,')
-		read_data = splitData[1]
+                plateID = row[0]
+                time = row[1]
+                resistance = row[2]
+                data = row[3]
 		# Write to file
-		temp_file.write( str(row[1]) + ',1,' + null_data + '\n' ) 
-		temp_file.write( str(row[1]) + ',0,' + read_data + '\n' )
+		temp_file.write(plateID+','+time+','+resistance+','+data+'\n')
 	
 	# Close file
 	temp_file.close()

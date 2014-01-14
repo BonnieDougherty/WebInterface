@@ -167,10 +167,10 @@ class Database(object):
             return current.fetchall()
 
     # insert entry into data table
-    def add_data(self,experiment,plate,time,data):
+    def add_data(self,experiment,plate,time,resistance,data):
         table_name = data_table_name(experiment)
-        cmd = "INSERT INTO {0} VALUES (?, ?, ?)".format(table_name)
-        self.execute(cmd,(plate,time,data,))
+        cmd = "INSERT INTO {0} VALUES (?, ?, ?, ?)".format(table_name)
+        self.execute(cmd,(plate,time,resistance,data,))
         
     # insert entry into plate table
     def add_plate(self,experiment,plate_id,name):
