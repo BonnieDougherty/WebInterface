@@ -137,7 +137,7 @@ def collect_data():
             except KeyboardInterrupt:
                 break      
         # Save to database
-        db = Database()
+        db = Database(dbname)
         for res in range(0,4):
             data = current_data[res*394:res*394+394]
             well_data = ''
@@ -168,7 +168,14 @@ if __name__ == '__main__':
         newPacket = packets.get_nowait()
     
     # Connect to database
-    db = Database('PlateReader')
+    current = Database.get_databases()
+    print current
+    dbname = raw_input("Select database or create new database:")
+    #print (dbname.lower() not in current)
+    if (dbname.lower() not in current):
+        db = Database.create_new(dbname)
+    else:
+        db = Database(dbname)
     name = raw_input("Name of the experiment:")
     experimenter = raw_input("Experimenter:")
     exp_id = db.add_experiment(name=name,experimenter=experimenter)
