@@ -5,20 +5,12 @@
 #
 #############################################
 
-
-#############################################
-""" Questions:
-What does os.path.join() do?
-Explain glob?
-"""
-#############################################
-
 import sqlite3 as sqlite
 import os
 import glob
 # The glob module finds all pathnames matching a specified pattern
 
-BASE_CGI_PATH = os.path.realpath("/home/pi")
+BASE_CGI_PATH = os.path.realpath("/media/usbhdd")
 DB_PATH = os.path.join(BASE_CGI_PATH,"databases")
 
 CREATE_EXPERIMENTS_TABLE = """
@@ -180,13 +172,13 @@ class Database(object):
     
     
 if __name__ == '__main__':
-    db = Database()
+    Database.create_new('Testing')
     # Add experiment to the database
-    exp_id = db.add_experiment(name = 'testfile',experimenter = 'Bonnie')
-    print type(db.get_experiment_ids())
-    print type(db.get_experiments())
-    print (db.get_plates(experiment=exp_id))
-    print (db.get_data(exp_id))
-    db.close()
+    #exp_id = db.add_experiment(name = 'testfile',experimenter = 'Bonnie')
+    #print type(db.get_experiment_ids())
+    #print type(db.get_experiments())
+    #print (db.get_plates(experiment=exp_id))
+    #print (db.get_data(exp_id))
+    #db.close()
         
     
