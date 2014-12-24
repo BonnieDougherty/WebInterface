@@ -172,13 +172,15 @@ class Database(object):
     
     
 if __name__ == '__main__':
-    Database.create_new('Testing')
+    #Database.create_new('Testing')
     # Add experiment to the database
     #exp_id = db.add_experiment(name = 'testfile',experimenter = 'Bonnie')
     #print type(db.get_experiment_ids())
     #print type(db.get_experiments())
     #print (db.get_plates(experiment=exp_id))
     #print (db.get_data(exp_id))
-    #db.close()
+    db = Database("PlateReader")
+    print(db.get_data(12,1))
+    db.close()
         
     

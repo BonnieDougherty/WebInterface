@@ -8,6 +8,16 @@ BASEPATH = os.path.realpath("/home/pi")
 R_PATH = os.path.join(BASEPATH,"Rscripts")
 GRAPHS_PATH = os.path.join(R_PATH,"graphs")
 
+import numpy
+from numpy import genfromtxt
+
+# set HOME environment variable to a directory the httpd sever can write to
+os.environ['MPLCONFIGDIR'] = '/home/pi/matplotlib'
+import matplotlib
+matplotlib.use('agg')
+
+import matplotlib.pyplot as plt
+
 #############################################
 #
 #		SUBROUTINES FOR FILE CREATION
@@ -28,7 +38,7 @@ def createTempCSV(data,database_name,experiment,plate):
                 resistance = row[2]
                 data = row[3]
 		# Write to file
-		temp_file.write(plateID+','+time+','+resistance+','+data+'\n')
+		temp_file.write(plateID+','+time+','+resistance+data+'\n')
 	
 	# Close file
 	temp_file.close()
@@ -44,16 +54,43 @@ def createTempCSV(data,database_name,experiment,plate):
 # Run R script to generate plots
 def generatePlots(database_name,experiment,plate,temp_data_file_path):
 	plotStoreDir = os.path.join(GRAPHS_PATH, "d" + database_name + "e" + experiment + "p" + plate)
-	r_script_path = os.path.join(R_PATH,"completePlateProcess.R")
+	#r_script_path = os.path.join(R_PATH,"completePlateProcess.R")
 	
 	if not os.path.exists(plotStoreDir):
 		os.makedirs(plotStoreDir)
 		os.chmod(plotStoreDir, stat.S_IWRITE)
 		os.chmod(plotStoreDir, stat.S_IRWXO)
 		os.chmod(plotStoreDir, stat.S_IRWXU)
-		retcode = subprocess.call(["Rscript",r_script_path,temp_data_file_path,plotStoreDir])
-		if retcode != 0:
-			os.rmdir(plotStoreDir)
+	#	retcode = subprocess.call(["Rscript",r_script_path,temp_data_file_path,plotStoreDir])
+	#	if retcode != 0:
+	#		os.rmdir(plotStoreDir)
+	
+	my_data = genfromtxt(temp_data_file_path,delimiter=',')
+	
+	# Generate 96 figures, one figure for each well
+	# HARD TO SEE ALL PLOTS, LOOK AT INCREASING LINE THICKNESS
+	#for well in range(96):
+	#	f,ax = plt.subplots()
+	#	ax.plot(my_data[:,1],my_data[:,3],'k*-')
+	#	save_file = os.path.join(plotStoreDir,"well"+str(well))
+	#	plt.savefig(save_file+".png")
+	#	plt.close(f)
+
+	# Generate 1 figure, with 96 subplots
+	font = {'family':'normal', 'weight':'bold','size':10}
+	matplotlib.rc('font',**font)
+	plt.figure(1)
+	plt.subplot(8,12,1)
+	upper = numpy.amax(my_data[:,3:])
+	lower = numpy.amin(my_data[:,3:])
+	
+	for j in range(8):
+		for i in range(12):
+			plt.subplot(8,12,12*j+i+1)
+			plt.plot(my_data[:,1],my_data[:,12*j+i+3],'k*-')
+	save_file = os.path.join(plotStoreDir,"plate")
+	plt.savefig(save_file+".png")
+	plt.close()
 	return plotStoreDir
 	
 	
