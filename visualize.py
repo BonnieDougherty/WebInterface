@@ -77,17 +77,21 @@ def generatePlots(database_name,experiment,plate,temp_data_file_path):
 	#	plt.close(f)
 
 	# Generate 1 figure, with 96 subplots
-	font = {'family':'normal', 'weight':'bold','size':10}
-	matplotlib.rc('font',**font)
+	#font = {'family':'normal', 'weight':'bold','size':10}
+	#matplotlib.rc('font',**font)
+	matplotlib.rc('xtick',labelsize=2)
+	matplotlib.rc('ytick',labelsize=2)
 	plt.figure(1)
 	plt.subplot(8,12,1)
 	upper = numpy.amax(my_data[:,3:])
 	lower = numpy.amin(my_data[:,3:])
 	
+	# Correct for time
+	my_data[:,1] = my_data[:,1] - my_data[1,1]
 	for j in range(8):
 		for i in range(12):
 			plt.subplot(8,12,12*j+i+1)
-			plt.plot(my_data[:,1],my_data[:,12*j+i+3],'k*-')
+			plt.plot(my_data[:,1],my_data[:,12*j+i+3],'k-')
 	save_file = os.path.join(plotStoreDir,"plate")
 	plt.savefig(save_file+".png")
 	plt.close()

@@ -145,17 +145,17 @@ class Database(object):
             current = self.execute(cmd)
             return current.fetchall()
     
-    def get_data(self,experiment,plate=None):
+    def get_data(self,experiment,plate,resistance=None):
         # Data table name based off experiment
         data_table = data_table_name(experiment)
-        if plate:
-            cmd = "SELECT * FROM {0} WHERE plate = ? ORDER BY time ASC".format(data_table)
-            current=self.execute(cmd,(plate,))
+        if resistance:
+            cmd = "SELECT * FROM {0} WHERE plate = ? and resistance = ? ORDER BY time ASC".format(data_table)
+            current=self.execute(cmd,(plate,resistance))
             return current.fetchall()
         else:
             # produces all plates rather than just one selected
-            cmd = "SELECT * FROM {0} ORDER BY time ASC".format(data_table)
-            current = self.execute(cmd)
+            cmd = "SELECT * FROM {0} WHERE plate = ? ORDER BY time ASC".format(data_table)
+            current = self.execute(cmd,(plate,))
             return current.fetchall()
 
     # insert entry into data table
@@ -180,7 +180,7 @@ if __name__ == '__main__':
     #print (db.get_plates(experiment=exp_id))
     #print (db.get_data(exp_id))
     db = Database("PlateReader")
-    print(db.get_data(12,1))
+    print(db.get_data(16,1,"03"))
     db.close()
         
     

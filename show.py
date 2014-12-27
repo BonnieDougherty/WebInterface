@@ -33,7 +33,7 @@ form = cgi.FieldStorage()
 db = Database(form.getvalue("db"))
 
 try:
-	data_from_db = db.get_data(experiment=form.getvalue("experiment"),plate=form.getvalue("plate")) 
+	data_from_db = db.get_data(experiment=form.getvalue("experiment"),plate=form.getvalue("plate"),resistance="01") 
 	
 	try:
 		# Create temp data file
@@ -54,8 +54,7 @@ try:
 	<pre>
 		Database: {0}
 		Experiment: {1}
-		Plate: {2}
-		Data:</pre>\n
+		Plate: {2}\n
 	""".format(form.getvalue("db"),
 		form.getvalue("experiment"),
 			form.getvalue("plate") )
@@ -69,9 +68,9 @@ try:
 		print "<b>Plots not available</b>"
 	print "</center>\n"
 
-	data_from_db = db.get_data(experiment=form.getvalue("experiment"),plate=form.getvalue("plate") )  
-	headings = ("Plate","Time","Resistor","Data")
-	print table_from_tuples(data_from_db,headings)
+	#data_from_db = db.get_data(experiment=form.getvalue("experiment"),plate=form.getvalue("plate") )  
+	#headings = ("Plate","Time","Resistor","Data")
+	#print table_from_tuples(data_from_db,headings)
 
 	db.close()
 	

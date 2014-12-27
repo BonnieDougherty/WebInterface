@@ -180,7 +180,6 @@ if __name__ == '__main__':
     experimenter = raw_input("Experimenter:")
     exp_id = db.add_experiment(name=name,experimenter=experimenter)
 
-
     # Send ND command - responses will create a list of addresses
     xbee.at(command=b'ND')
     numReaders = int(raw_input("How many readers?"))
